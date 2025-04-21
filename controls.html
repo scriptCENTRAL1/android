@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebAssembly Android Emulator</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f0f0f0;
+    }
+    #emulator-container {
+      position: relative;
+      width: 360px;
+      height: 640px;
+      overflow: hidden;
+      border: 16px solid #111;
+      border-radius: 32px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+    }
+    #controls {
+      margin-top: 20px;
+      text-align: center;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 0 5px;
+      background: #2196F3;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #loading {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-family: Arial, sans-serif;
+    }
+    .progress {
+      width: 80%;
+      height: 20px;
+      background: #333;
+      margin-top: 20px;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background: #4CAF50;
+      width: 0%;
+      transition: width 0.3s;
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <div id="emulator-container">
+      <div id="loading">
+        <h2>Loading Android Emulator...</h2>
+        <div class="progress">
+          <div class="progress-bar" id="progress"></div>
+        </div>
+        <p id="status">Initializing WebAssembly...</p>
+      </div>
+    </div>
+    <div id="controls">
+      <button id="power">Power</button>
+      <button id="volume-up">Volume Up</button>
+      <button id="volume-down">Volume Down</button>
+      <button id="home">Home</button>
+    </div>
+  </div>
+
+  <script src="android-qemu.js"></script>
+  <script>
+    // Initialize the emulator
+    const emulator = new AndroidQEMUEmulator();
+    
+    // Update loading progress
+    function updateProgress(percent, message) {
+      document.getElementById('progress').style.width = `${percent}%`;
+      document.getElementById('status').textContent = message;
+    }
+    
+    // Start the emulator
+    async function startEmulator() {
+      try {
+        updateProgress(10, 'Initializing emulator...');
+        await emulator.initialize();
+        
+        updateProgress(30, 'Downloading Android image...');
+        await emulator.loadAndroidImage('android-x86.img');
+        
+        updateProgress(90, 'Starting Android...');
+        emulator.start();
+        
+        updateProgress(100, 'Done!');
+        setTimeout(() => {
+          document.getElementById('loading').style.display = 'none';
+        }, 1000);
+      } catch (error) {
+        console.error('Failed to start emulator:', error);
+        document.getElementById('status').textContent = 'Error: ' + error.message;
+      }
+    }
+    
+    // Set up UI controls
+    document.getElementById('power').addEventListener('click', () => {
+      if (emulator.running) {
+        emulator.stop();
+      } else {
+        emulator.start();
+      }
+    });
+    
+    // Start the emulator when page loads
+    window.addEventListener('load', startEmulator);
+  </script>
+</body>
+</html>
